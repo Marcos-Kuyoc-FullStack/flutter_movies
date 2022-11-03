@@ -3,10 +3,14 @@ import 'package:fl_movies/models/now_playing_response.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import '../models/models.dart';
+
 class MoviesProvider extends ChangeNotifier {
   final String _apiKey = '4671f57cec97ab866da2cf47c38d2cd0';
   final String _baseUrl = 'api.themoviedb.org';
   final String _language = 'es-Es';
+
+  List<Movie> onDisplayMovies = [];
 
   MoviesProvider() {
     print('Movies provider inicializado');
@@ -25,7 +29,8 @@ class MoviesProvider extends ChangeNotifier {
 
     if (response.statusCode == 200) {
       final nowPlayingResponse = NowPlayingResponse.fromJson(response.body);
-      print(nowPlayingResponse.results[1].title);
+      onDisplayMovies = nowPlayingResponse.results;
+      notifyListeners();
     } else {
       print('Request failed with status: ${response.statusCode}.');
     }
