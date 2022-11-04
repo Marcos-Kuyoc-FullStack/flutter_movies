@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:fl_movies/models/now_playing_response.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -11,10 +9,12 @@ class MoviesProvider extends ChangeNotifier {
   final String _language = 'es-Es';
 
   List<Movie> onDisplayMovies = [];
+  List<Movie> popularMovies = [];
 
   MoviesProvider() {
     print('Movies provider inicializado');
     getOnDisplayMovies();
+    getPopularMovies();
   }
 
   getOnDisplayMovies() async {
@@ -30,6 +30,25 @@ class MoviesProvider extends ChangeNotifier {
     if (response.statusCode == 200) {
       final nowPlayingResponse = NowPlayingResponse.fromJson(response.body);
       onDisplayMovies = nowPlayingResponse.results;
+      notifyListeners();
+    } else {
+      print('Request failed with status: ${response.statusCode}.');
+    }
+  }
+
+  getPopularMovies() async {
+    final url = Uri.https(_baseUrl, '/3/movie/popular', {
+      'api_key': _apiKey,
+      'language': _language,
+      'page': '1',
+    });
+
+    // Await the http get response, then decode the json-formatted response.
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final popularResponse = PopularResponse.fromJson(response.body);
+      popularMovies = [...popularMovies, ...popularResponse.results];
       notifyListeners();
     } else {
       print('Request failed with status: ${response.statusCode}.');
