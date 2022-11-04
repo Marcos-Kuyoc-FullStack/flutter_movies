@@ -11,47 +11,46 @@ class MoviesProvider extends ChangeNotifier {
   List<Movie> onDisplayMovies = [];
   List<Movie> popularMovies = [];
 
+  int _popularPage = 0;
+
   MoviesProvider() {
     print('Movies provider inicializado');
     getOnDisplayMovies();
     getPopularMovies();
   }
 
-  getOnDisplayMovies() async {
-    final url = Uri.https(_baseUrl, '/3/movie/now_playing', {
-      'api_key': _apiKey,
-      'language': _language,
-      'page': '1',
-    });
+  Future<String> _getJsonData(String endpoint, [int page = 1]) async {
+    try {
+      final url = Uri.https(_baseUrl, endpoint, {
+        'api_key': _apiKey,
+        'language': _language,
+        'page': '$page',
+      });
 
-    // Await the http get response, then decode the json-formatted response.
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final nowPlayingResponse = NowPlayingResponse.fromJson(response.body);
-      onDisplayMovies = nowPlayingResponse.results;
-      notifyListeners();
-    } else {
-      print('Request failed with status: ${response.statusCode}.');
+      // Await the http get response, then decode the json-formatted response.
+      final response = await http.get(url);
+      return response.body;
+    } catch (e) {
+      print('Request failed with status: ${e.toString()}.');
+      return e.toString();
     }
   }
 
+  getOnDisplayMovies() async {
+    final data = await _getJsonData('/3/movie/now_playing');
+    final nowPlayingResponse = NowPlayingResponse.fromJson(data);
+
+    onDisplayMovies = nowPlayingResponse.results;
+    notifyListeners();
+  }
+
   getPopularMovies() async {
-    final url = Uri.https(_baseUrl, '/3/movie/popular', {
-      'api_key': _apiKey,
-      'language': _language,
-      'page': '1',
-    });
+    _popularPage++;
 
-    // Await the http get response, then decode the json-formatted response.
-    final response = await http.get(url);
+    final data = await _getJsonData('/3/movie/popular', _popularPage);
+    final popularResponse = PopularResponse.fromJson(data);
 
-    if (response.statusCode == 200) {
-      final popularResponse = PopularResponse.fromJson(response.body);
-      popularMovies = [...popularMovies, ...popularResponse.results];
-      notifyListeners();
-    } else {
-      print('Request failed with status: ${response.statusCode}.');
-    }
+    popularMovies = [...popularMovies, ...popularResponse.results];
+    notifyListeners();
   }
 }
